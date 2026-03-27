@@ -1,17 +1,240 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Music recommender</title>
-    <link rel="stylesheet" href="./style.css">
-    <link rel="icon" href="./favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8" />
+    <title>Music Recommendation System</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Roboto:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
+
   <body>
-    <main>
-        <h1>Welcome to My Website</h1>  
-    </main>
-    <script src="index.js"></script>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="book-title">
+          <span class="sub">An Algorithmic Study</span>
+        </div>
+        <div class="authors">PRATISHA BISTA</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <h3>CONTEXT</h3>
+          <ul>
+            <li><a href="#introduction">I. Introduction</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section active">
+          <h3>ANALYSIS</h3>
+          <ul>
+            <li>
+              <a href="#metholodogy">II. Methodology: K-Means Clustering</a>
+            </li>
+            <li><a href="#experiment">III. Recommendation Experiment</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
+          <h3>REFERENCE</h3>
+          <ul>
+            <li><a href="#library">IV. Database Catalog</a></li>
+            <li><a href="#glossary">V. Glossary of Features</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
+          <!-- <h3>RELATED PROJECTS</h3> -->
+          <div class="book-icons"></div>
+        </div>
+      </nav>
+    </div>
+
+    <div class="main-wrapper">
+      <header class="top-nav">
+        <div class="breadcrumbs">
+          <a href="#">PROJECTS</a> / <a href="#">MUSIC ML</a> / K-MEANS
+          RECOMMENDATION
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="chapter-header">
+          <div class="chapter-number">1.</div>
+          <h1>MUSIC RECOMMENDER</h1>
+        </div>
+
+        <section id="introduction">
+          <h2>I. Introduction</h2>
+          <p class="intro-text">
+            This experimentation involving the application of unsupervised
+            machine learning techniques to the field of music recommendation is
+            an attempt to understand the mechanics of music discovery. The
+            central question behind this project is: "How can one discover songs
+            that share a similar musical vibe?" Instead of relying on popularity
+            or user interaction data, the focus is placed on identifying
+            similarity through measurable audio properties such as valence,
+            danceability, acousticness, energy, etc.
+          </p>
+        </section>
+
+        <section id="metholodogy">
+          <h2>II. Methodology: K-Means Clustering</h2>
+          <p>The system operates in two distinct phases:</p>
+          <ol class="bullet-list">
+            <li>
+              <strong>Clustering:</strong> Songs are grouped into
+              high-dimensional clusters based on audio properties.
+            </li>
+            <li>
+              <strong>Vector Quantization:</strong> Once a target song is
+              selected, the engine calculates the Cosine Similarity between the
+              target and other tracks within the same cluster to find the
+              closest matches.
+            </li>
+          </ol>
+        </section>
+
+        <section id="experiment" class="experiment-section">
+          <h2>III. Recommendation Experiment</h2>
+          <div class="experiment-container">
+            <div class="experiment-main">
+              <p>
+                Select a track from the library catalog to observe the output.
+              </p>
+              <form
+                action="/recommend#experiment"
+                method="POST"
+                class="search-form"
+              >
+                <input
+                  type="text"
+                  name="song_name"
+                  id="song-search"
+                  placeholder="Search track name"
+                  value="{{ searched_song if searched_song }}"
+                  list="song-suggestions"
+                  autocomplete="off"
+                  required
+                />
+                <datalist id="song-suggestions"></datalist>
+                <button type="submit">SEARCH</button>
+              </form>
+
+              <script>
+                const searchInput = document.getElementById("song-search");
+                const suggestionsList =
+                  document.getElementById("song-suggestions");
+
+                let debounceTimer;
+                searchInput.addEventListener("input", (e) => {
+                  clearTimeout(debounceTimer);
+                  debounceTimer = setTimeout(async () => {
+                    const query = e.target.value;
+                    if (query.length < 2) {
+                      suggestionsList.innerHTML = "";
+                      return;
+                    }
+
+                    try {
+                      const response = await fetch(
+                        `/suggest?q=${encodeURIComponent(query)}`,
+                      );
+                      const suggestions = await response.json();
+
+                      suggestionsList.innerHTML = suggestions
+                        .map((s) => `<option value="${s}">`)
+                        .join("");
+                    } catch (err) {
+                      console.error("Error fetching suggestions:", err);
+                    }
+                  }, 200);
+                });
+              </script>
+
+              {% if error_message %}
+              <div class="note-box error">{{ error_message }}</div>
+              {% endif %} {% if recommendations %}
+              <h3>Results</h3>
+              <p>
+                The engine has identified the following similarity vectors for
+                "{{ searched_song }}":
+              </p>
+              <table class="results-table">
+                <thead>
+                  <tr>
+                    <th>TRACK NAME</th>
+                    <th>ARTIST</th>
+                    <th>YEAR</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for song in recommendations %}
+                  <tr>
+                    <td><strong>{{ song.name }}</strong></td>
+                    <td>{{ song.artists }}</td>
+                    <td>{{ song.year }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+
+        <section id="library">
+          <h2>IV. Database Catalog</h2>
+          <p>
+            The following collection represents the entirety of tracks available
+            to the engine. Total Capacity: {{ all_songs|length }} Songs.
+          </p>
+          <div class="note-box">
+            <strong>Note:</strong> Recommendations are generated only from songs
+            already indexed in the local database.
+          </div>
+          <div class="scroll-catalog">
+            <ul class="catalog-list">
+              {% for song in all_songs %}
+              <li>{{ song }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </section>
+
+        <section id="glossary">
+          <h2>V. Glossary of Features</h2>
+          <dl class="glossary-list">
+            <dt>Valence</dt>
+            <dd>
+              A measure from 0.0 to 1.0 describing the musical positiveness.
+              High valence sounds cheerful.
+            </dd>
+
+            <dt>Danceability</dt>
+            <dd>
+              How suitable a track is for dancing based on tempo, rhythm
+              stability, beat strength, etc.
+            </dd>
+
+            <dt>Acousticness</dt>
+            <dd>A confidence measure of whether the track is acoustic.</dd>
+
+            <dt>Energy</dt>
+            <dd>
+              A perceptual measure of intensity and activity (loud, fast,
+              noisy).
+            </dd>
+          </dl>
+        </section>
+      </main>
+    </div>
   </body>
 </html>
