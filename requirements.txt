@@ -5,3 +5,5 @@ scikit-learn
 spotipy
 python-dotenv
 joblib
+gunicorn
+
